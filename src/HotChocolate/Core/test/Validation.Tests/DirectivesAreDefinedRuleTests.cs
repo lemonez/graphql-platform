@@ -75,7 +75,7 @@ public class DirectivesAreDefinedRuleTests
     }
 
     [Fact]
-    public void SkipOnTwoDifferentFields()
+    public void SkipWithDifferentArgsOnTheSameField()
     {
         ExpectValid(@"
                 query ($foo: Boolean = true, $bar: Boolean = false) {
@@ -85,6 +85,59 @@ public class DirectivesAreDefinedRuleTests
                     field @skip(if: $bar) {
                         subfieldB
                     }
+                }
+            ");
+    }
+
+    [Fact]
+    public void SkipOnTheSameField()
+    {
+        ExpectValid(@"
+                query {
+                    field @skip(if: true) {
+                        subfieldA
+                    }
+                    field @skip(if: false) {
+                        subfieldA
+                    }
+                }
+            ");
+    }
+
+    [Fact]
+    public void SkipOnSameFieldInDifferentFragments()
+    {
+        ExpectValid(@"
+                query ($foo: Boolean = true, $bar: Boolean = false) {
+                    ...A
+                    ...B
+                }
+
+                fragment A on Query {
+                    field @skip(if: $foo)
+                }
+
+                fragment B on Query {
+                    field @skip(if: $bar)
+                }
+            ");
+    }
+
+    [Fact]
+    public void SkipOnSameFieldWithSameArgsInDifferentFragments()
+    {
+        ExpectValid(@"
+                query ($foo: Boolean!) {
+                    ...A
+                    ...B
+                }
+
+                fragment A on Query {
+                    field @skip(if: $foo)
+                }
+
+                fragment B on Query {
+                    field @skip(if: $foo)
                 }
             ");
     }

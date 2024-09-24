@@ -845,6 +845,54 @@ public class SkipTests(ITestOutputHelper output)
 
     #region Parallel Resolve - Shared Entry Field
 
+    [Fact(Skip = "No error should be produced")]
+    public async Task Parallel_Resolve_SharedEntryField_Skip_Twice_On_Same_EntryField()
+    {
+        // arrange
+        var subgraphA = await TestSubgraph.CreateAsync(
+            """
+            type Query {
+              viewer: Viewer
+            }
+
+            type Viewer {
+              name: String
+            }
+            """);
+
+        var subgraphB = await TestSubgraph.CreateAsync(
+            """
+            type Query {
+              viewer: Viewer
+            }
+
+            type Viewer {
+              userId: ID
+            }
+            """);
+
+        using var subgraphs = new TestSubgraphCollection(output, [subgraphA, subgraphB]);
+        var executor = await subgraphs.GetExecutorAsync();
+        var request = OperationRequestBuilder.New()
+            .SetDocument("""
+                         query Test {
+                           viewer @skip(if: true) {
+                             __typename
+                           }
+                           viewer @skip(if: false) {
+                             __typename
+                           }
+                         }
+                         """)
+            .Build();
+
+        // act
+        var result = await executor.ExecuteAsync(request);
+
+        // assert
+        MatchMarkdownSnapshot(request, result);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
